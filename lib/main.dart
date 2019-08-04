@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'package:logging/logging.dart';
+//import 'package:logging/logging.dart';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'dart:convert';
+//import 'package:firebase_core/firebase_core.dart';
+//import 'dart:convert';
 
 void main() => runApp(new MyApp());
 
-final Logger logger = new Logger("global logger");
+//final Logger logger = new Logger("global logger");
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -41,65 +41,64 @@ class _MyHomePageState extends State<MyHomePage> {
     TextEditingController _emailTextController = new TextEditingController();
 
     return showDialog<Null>(
-      context: context,
-      builder: (BuildContext context) {
-        return new AlertDialog(
-          title: const Text("Add a contact"),
-          content: Container(
-            height: 120.0,
-            width: 100.0,
-            child: ListView(
-              children: <Widget>[
-                new TextField(
-                  controller: _nameTextController,
-                  decoration: const InputDecoration(labelText: "Name: "),
-                ),
-                new TextField(
-                  controller: _emailTextController,
-                  decoration: const InputDecoration(labelText: "Email: "),
-                ),
+        context: context,
+        builder: (BuildContext context) {
+          return new AlertDialog(
+            title: const Text("Add a contact"),
+            content: Container(
+              height: 120.0,
+              width: 100.0,
+              child: ListView(
+                children: <Widget>[
+                  new TextField(
+                    controller: _nameTextController,
+                    decoration: const InputDecoration(labelText: "Name: "),
+                  ),
+                  new TextField(
+                    controller: _emailTextController,
+                    decoration: const InputDecoration(labelText: "Email: "),
+                  ),
 
-              ],
+                ],
+              ),
             ),
-          ),
-          actions: <Widget>[
+            actions: <Widget>[
 
-            new FlatButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Cancel")
-            ),
-            // This button results in adding the contact to the database
-            new FlatButton(
-                onPressed: () {
-
-                  CloudFunctions.instance.call(
-                    functionName: "addUser",
-                    parameters: {
+              new FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel")
+              ),
+              // This button results in adding the contact to the database
+              new FlatButton(
+                  onPressed: () async {
+                    final HttpsCallable addUser = CloudFunctions.instance.getHttpsCallable(
+                        functionName: "addUser"
+                    );
+                    await addUser.call(<String,dynamic>{
                       "name": _nameTextController.text,
                       "email": _emailTextController.text
-                    }
-                  );
-                  Navigator.of(context).pop();
+                    });
+                    Navigator.of(context).pop();
 
-                },
-                child: const Text("Confirm")
-            )
+                  },
+                  child: const Text("Confirm")
+              )
 
-          ],
+            ],
 
-        );
-      }
-    
+          );
+        }
+
     );
   }
 
   StreamBuilder<QuerySnapshot> _retrieveUsers() {
 
     return new StreamBuilder<QuerySnapshot>(
-      stream: Firestore.instance.collection('users').snapshots(),
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        stream: Firestore.instance.collection('users').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData || snapshot.data == null) {
             print("retrieve users do not have data.");
             return Container();
@@ -108,22 +107,22 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: snapshot.data.documents.length,
               itemBuilder: (context, index) {
 
-                  final DocumentSnapshot userDoc = snapshot.data.documents[index];
+                final DocumentSnapshot userDoc = snapshot.data.documents[index];
 
-                  return Dismissible(
-                    key: new Key(snapshot.data.documents[index].toString()),
-                    direction: DismissDirection.horizontal,
-                    onDismissed: (DismissDirection direction) {
-                      Firestore.instance.collection('users').document(userDoc.documentID).delete();
-                    },
-                    child: new InkWell(
-                      onTap: () => _showEditUserDialog(context, userDoc),
-                      child: new ListTile(
+                return Dismissible(
+                  key: new Key(snapshot.data.documents[index].toString()),
+                  direction: DismissDirection.horizontal,
+                  onDismissed: (DismissDirection direction) {
+                    Firestore.instance.collection('users').document(userDoc.documentID).delete();
+                  },
+                  child: new InkWell(
+                    onTap: () => _showEditUserDialog(context, userDoc),
+                    child: new ListTile(
                         title: new Text(userDoc['name']),
                         subtitle: new Text(userDoc['email'])
-                      ),
                     ),
-                  );
+                  ),
+                );
               }
           );
 
@@ -136,54 +135,54 @@ class _MyHomePageState extends State<MyHomePage> {
     TextEditingController _emailTextController = new TextEditingController(text: userDoc['email']);
 
     return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return new AlertDialog(
-          title: Text("Edit contact"),
-          content: Container(
-            height: 120.0,
-            width: 100.0,
-            child: ListView(
-              children: <Widget>[
-                new TextField(
-                  controller: _nameTextController,
-                  decoration: new InputDecoration(labelText: "Name: "),
+        context: context,
+        builder: (BuildContext context) {
+          return new AlertDialog(
+            title: Text("Edit contact"),
+            content: Container(
+              height: 120.0,
+              width: 100.0,
+              child: ListView(
+                children: <Widget>[
+                  new TextField(
+                    controller: _nameTextController,
+                    decoration: new InputDecoration(labelText: "Name: "),
 
-                ),
-                new TextField(
-                  controller: _emailTextController,
-                  decoration: new InputDecoration(labelText: "Email: "),
-                ),
+                  ),
+                  new TextField(
+                    controller: _emailTextController,
+                    decoration: new InputDecoration(labelText: "Email: "),
+                  ),
 
-              ],
+                ],
+              ),
             ),
-          ),
-          actions: <Widget>[
-            new FlatButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Cancel")
-            ),
-            // This button results in adding the contact to the database
-            new FlatButton(
-                onPressed: () {
-                  CloudFunctions.instance.call(
-                      functionName: "updateUser",
-                      parameters: {
-                        "doc_id": userDoc.documentID,
-                        "name": _nameTextController.text,
-                        "email": _emailTextController.text
-                      }
-                  );
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Confirm")
-            )
-          ],
+            actions: <Widget>[
+              new FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Cancel")
+              ),
+              // This button results in adding the contact to the database
+              new FlatButton(
+                  onPressed: () async {
+                    final HttpsCallable updateUser = CloudFunctions.instance.getHttpsCallable(
+                        functionName: "updateUser"
+                    );
+                    await updateUser.call(<String, dynamic>{
+                      "doc_id": userDoc.documentID,
+                      "name": _nameTextController.text,
+                      "email": _emailTextController.text
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text("Confirm")
+              )
+            ],
 
-        );
-      }
+          );
+        }
     );
   }
 
@@ -194,8 +193,8 @@ class _MyHomePageState extends State<MyHomePage> {
     return new Scaffold(
       appBar: new AppBar(),
       body: new Center(
-       
-        child: _retrieveUsers()
+
+          child: _retrieveUsers()
 
 
       ),
